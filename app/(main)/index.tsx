@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -25,8 +25,8 @@ import {
   getStreak,
 } from '@/lib/storage';
 import { Colors, ToneColors } from '@/constants/colors';
-import { RoastLanguage, RoastTone, RoastResult } from '@/lib/types';
-import IntensitySlider from '@/components/IntensitySlider';
+import { RoastTone, RoastResult } from '@/lib/types';
+import { useLanguage } from '@/lib/LanguageContext';
 import LoadingScreen from '@/components/LoadingScreen';
 
 const { width } = Dimensions.get('window');
@@ -35,11 +35,10 @@ const FREE_DAILY_LIMIT = 3;
 type ScreenState = 'home' | 'preview' | 'loading';
 
 export default function HomeScreen() {
+  const { language, t, setLanguage } = useLanguage();
   const [screenState, setScreenState] = useState<ScreenState>('home');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [tone, setTone] = useState<RoastTone>('ironic');
-  const [intensity, setIntensity] = useState(5);
-  const [language, setLanguage] = useState<RoastLanguage>('en');
   const [dailyCount, setDailyCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [username, setUsername] = useState('');
@@ -63,7 +62,7 @@ export default function HomeScreen() {
     if (source === 'camera') {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Camera needed', 'Please allow camera access in Settings.');
+        Alert.alert(t.cameraPermTitle, t.cameraPermBody);
         return;
       }
       result = await ImagePicker.launchCameraAsync({
@@ -75,7 +74,7 @@ export default function HomeScreen() {
     } else {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert('Gallery needed', 'Please allow photo library access in Settings.');
+        Alert.alert(t.galleryPermTitle, t.galleryPermBody);
         return;
       }
       result = await ImagePicker.launchImageLibraryAsync({
@@ -95,11 +94,7 @@ export default function HomeScreen() {
   async function handleRoast() {
     if (!imageUri) return;
     if (dailyCount >= FREE_DAILY_LIMIT) {
-      Alert.alert(
-        'Daily limit reached 🔥',
-        `Free users get ${FREE_DAILY_LIMIT} roasts per day. Upgrade to Roaster Pro for unlimited roasts!`,
-        [{ text: 'OK' }]
-      );
+      Alert.alert(t.dailyLimitTitle, t.dailyLimitBody(FREE_DAILY_LIMIT), [{ text: t.ok }]);
       return;
     }
 
@@ -117,7 +112,7 @@ export default function HomeScreen() {
       const response = await submitRoast({
         image: base64,
         tone,
-        intensity,
+        intensity: 10,
         language,
         deviceId: 'device-placeholder',
       });
@@ -131,7 +126,7 @@ export default function HomeScreen() {
         ...response.data,
         imageUri,
         tone,
-        intensity,
+        intensity: 10,
         language,
         createdAt: new Date().toISOString(),
       };
@@ -146,9 +141,12 @@ export default function HomeScreen() {
       setImageUri(null);
     } catch (err: any) {
       setScreenState('preview');
-      Alert.alert('Oops', err.message ?? 'Something went wrong. Try again!');
+      Alert.alert(t.oops, err.message ?? t.somethingWrong);
     }
   }
+
+  const roastsLeft = FREE_DAILY_LIMIT - dailyCount;
+  const roastsLeftText = roastsLeft === 1 ? t.roastsLeftOne : t.roastsLeft(roastsLeft);
 
   if (screenState === 'loading') {
     return <LoadingScreen />;
@@ -163,21 +161,31 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>
-              {username ? `Hey, ${username} 👋` : 'Hey there 👋'}
+              {username ? t.greeting(username) : t.greetingAnon}
             </Text>
-            <Text style={styles.headerTitle}>Outfit Roaster</Text>
+            <Text style={styles.headerTitle}>{t.appName}</Text>
           </View>
-          <View style={styles.streakBadge}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={styles.streakCount}>{streak}</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.langBtn}
+              onPress={() => {
+                setLanguage(language === 'en' ? 'it' : 'en');
+                Haptics.selectionAsync();
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.langFlag}>{language === 'en' ? '🇬🇧' : '🇮🇹'}</Text>
+            </TouchableOpacity>
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakEmoji}>🔥</Text>
+              <Text style={styles.streakCount}>{streak}</Text>
+            </View>
           </View>
         </View>
 
         {/* Daily limit bar */}
         <View style={styles.limitBar}>
-          <Text style={styles.limitText}>
-            {FREE_DAILY_LIMIT - dailyCount} roast{FREE_DAILY_LIMIT - dailyCount !== 1 ? 's' : ''} left today
-          </Text>
+          <Text style={styles.limitText}>{roastsLeftText}</Text>
           <View style={styles.limitDots}>
             {Array.from({ length: FREE_DAILY_LIMIT }).map((_, i) => (
               <View key={i} style={[styles.limitDot, i < dailyCount && styles.limitDotUsed]} />
@@ -191,7 +199,7 @@ export default function HomeScreen() {
             <View style={styles.cameraZone}>
               <View style={styles.cameraPlaceholder}>
                 <Ionicons name="shirt-outline" size={64} color={Colors.textMuted} />
-                <Text style={styles.cameraLabel}>Your outfit goes here</Text>
+                <Text style={styles.cameraLabel}>{t.outfitPlaceholder}</Text>
               </View>
             </View>
 
@@ -209,7 +217,7 @@ export default function HomeScreen() {
                   end={{ x: 1, y: 1 }}
                 >
                   <Ionicons name="camera" size={28} color="#fff" />
-                  <Text style={styles.actionBtnText}>Take Photo</Text>
+                  <Text style={styles.actionBtnText}>{t.takePhoto}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -219,13 +227,11 @@ export default function HomeScreen() {
                 activeOpacity={0.85}
               >
                 <Ionicons name="images-outline" size={28} color={Colors.text} />
-                <Text style={styles.actionBtnText}>Gallery</Text>
+                <Text style={styles.actionBtnText}>{t.gallery}</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.hint}>
-              Point the camera at your full outfit for the best roast
-            </Text>
+            <Text style={styles.hint}>{t.cameraHint}</Text>
           </>
         )}
 
@@ -243,53 +249,32 @@ export default function HomeScreen() {
             </View>
 
             {/* Tone selector */}
-            <Text style={styles.sectionLabel}>Roast Tone</Text>
+            <Text style={styles.sectionLabel}>{t.roastTone}</Text>
             <View style={styles.toneRow}>
-              {(['brutal', 'ironic', 'constructive'] as RoastTone[]).map((t) => {
-                const labels = { brutal: '🔥 Brutal', ironic: '😏 Ironic', constructive: '🌱 Kind' };
-                const isActive = tone === t;
+              {(['brutal', 'ironic', 'constructive'] as RoastTone[]).map((tone_key) => {
+                const labels = {
+                  brutal: t.toneBrutal,
+                  ironic: t.toneIronic,
+                  constructive: t.toneKind,
+                };
+                const isActive = tone === tone_key;
                 return (
                   <TouchableOpacity
-                    key={t}
+                    key={tone_key}
                     style={[
                       styles.toneChip,
-                      isActive && { backgroundColor: ToneColors[t] + '22', borderColor: ToneColors[t] },
+                      isActive && { backgroundColor: ToneColors[tone_key] + '22', borderColor: ToneColors[tone_key] },
                     ]}
-                    onPress={() => { setTone(t); Haptics.selectionAsync(); }}
+                    onPress={() => { setTone(tone_key); Haptics.selectionAsync(); }}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.toneChipText, isActive && { color: ToneColors[t] }]}>
-                      {labels[t]}
+                    <Text style={[styles.toneChipText, isActive && { color: ToneColors[tone_key] }]}>
+                      {labels[tone_key]}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
-
-            {/* Language toggle */}
-            <Text style={styles.sectionLabel}>Language</Text>
-            <View style={styles.langRow}>
-              {(['en', 'it'] as RoastLanguage[]).map((lang) => {
-                const labels = { en: '🇬🇧 English', it: '🇮🇹 Italiano' };
-                const isActive = language === lang;
-                return (
-                  <TouchableOpacity
-                    key={lang}
-                    style={[styles.toneChip, isActive && styles.langChipActive]}
-                    onPress={() => { setLanguage(lang); Haptics.selectionAsync(); }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.toneChipText, isActive && styles.langChipTextActive]}>
-                      {labels[lang]}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Intensity slider */}
-            <Text style={styles.sectionLabel}>Intensity</Text>
-            <IntensitySlider value={intensity} onChange={setIntensity} />
 
             {/* Roast button */}
             <TouchableOpacity
@@ -303,7 +288,7 @@ export default function HomeScreen() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={styles.roastBtnText}>Roast Me 🔥</Text>
+                <Text style={styles.roastBtnText}>{t.roastMe}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -324,6 +309,16 @@ const styles = StyleSheet.create({
   },
   greeting: { fontSize: 14, color: Colors.textMuted, marginBottom: 2 },
   headerTitle: { fontSize: 26, fontWeight: '800', color: Colors.text },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  langBtn: {
+    backgroundColor: Colors.darkCard,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  langFlag: { fontSize: 20 },
   streakBadge: {
     backgroundColor: Colors.darkCard,
     borderRadius: 12,
@@ -405,11 +400,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 20,
   },
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: Colors.textMuted, marginBottom: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    marginBottom: 10,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
   toneRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
-  langRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  langChipActive: { backgroundColor: Colors.primary + '22', borderColor: Colors.primary },
-  langChipTextActive: { color: Colors.primary },
   toneChip: {
     flex: 1,
     paddingVertical: 10,

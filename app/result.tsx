@@ -18,16 +18,17 @@ import ViewShot from 'react-native-view-shot';
 import * as ExpoSharing from 'expo-sharing';
 import { Colors } from '@/constants/colors';
 import { RoastResult } from '@/lib/types';
+import { useLanguage } from '@/lib/LanguageContext';
 import ResultCard from '@/components/ResultCard';
 
 const { width } = Dimensions.get('window');
 
 export default function ResultScreen() {
+  const { t } = useLanguage();
   const params = useLocalSearchParams<{ data: string }>();
   const result: RoastResult = JSON.parse(params.data);
   const cardRef = useRef<ViewShot>(null);
 
-  const scoreAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(60)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [displayScore, setDisplayScore] = useState(0);
@@ -63,10 +64,12 @@ export default function ResultScreen() {
           dialogTitle: 'Share your roast!',
         });
       } else {
-        await Share.share({ message: `I got ${result.score}/10 on Outfit Roaster! "${result.styleLabel}" 😂 Get roasted at outfitroaster.app` });
+        await Share.share({
+          message: `I got ${result.score}/10 on Outfit Roaster! "${result.styleLabel}" 😂 Get roasted at outfitroaster.app`,
+        });
       }
     } catch {
-      Alert.alert('Error', 'Could not share the card. Try saving it first.');
+      Alert.alert(t.error, t.shareError);
     }
   }
 
@@ -74,7 +77,7 @@ export default function ResultScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const { granted } = await MediaLibrary.requestPermissionsAsync();
     if (!granted) {
-      Alert.alert('Permission needed', 'Allow photo library access to save your roast card.');
+      Alert.alert(t.permissionNeeded, t.photoPermBody);
       return;
     }
     try {
@@ -82,9 +85,9 @@ export default function ResultScreen() {
       if (!uri) throw new Error();
       await MediaLibrary.saveToLibraryAsync(uri);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Saved! 📸', 'Your roast card has been saved to your photos.');
+      Alert.alert(t.savedTitle, t.savedBody);
     } catch {
-      Alert.alert('Error', 'Could not save the card.');
+      Alert.alert(t.error, t.saveError);
     }
   }
 
@@ -97,7 +100,6 @@ export default function ResultScreen() {
     <View style={styles.container}>
       <LinearGradient colors={['#0D0D1A', '#1A1A2E']} style={StyleSheet.absoluteFill} />
 
-      {/* Close button */}
       <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
         <Text style={styles.closeBtnText}>✕</Text>
       </TouchableOpacity>
@@ -106,7 +108,7 @@ export default function ResultScreen() {
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
           {/* Score headline */}
           <View style={styles.scoreRow}>
-            <Text style={styles.scoreLabel}>Your score</Text>
+            <Text style={styles.scoreLabel}>{t.yourScore}</Text>
             <View style={styles.scoreBadge}>
               <Text style={styles.scoreNumber}>{displayScore}</Text>
               <Text style={styles.scoreOf}>/10</Text>
@@ -125,7 +127,7 @@ export default function ResultScreen() {
             <ResultCard result={result} gradient={gradient} />
           </ViewShot>
 
-          {/* Roast text (outside card too for readability) */}
+          {/* Roast text */}
           <View style={styles.roastBox}>
             <Text style={styles.roastIcon}>🎤</Text>
             <Text style={styles.roastText}>"{result.roast}"</Text>
@@ -135,7 +137,7 @@ export default function ResultScreen() {
           <View style={styles.tipBox}>
             <Text style={styles.tipIcon}>💡</Text>
             <View style={styles.tipContent}>
-              <Text style={styles.tipTitle}>Style Tip</Text>
+              <Text style={styles.tipTitle}>{t.styleTip}</Text>
               <Text style={styles.tipText}>{result.tip}</Text>
             </View>
           </View>
@@ -149,7 +151,7 @@ export default function ResultScreen() {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={styles.shareBtnText}>Share 📤</Text>
+                <Text style={styles.shareBtnText}>{t.share}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -157,11 +159,7 @@ export default function ResultScreen() {
               <Text style={styles.iconBtnText}>💾</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => { router.back(); }}
-              activeOpacity={0.85}
-            >
+            <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()} activeOpacity={0.85}>
               <Text style={styles.iconBtnText}>🔄</Text>
             </TouchableOpacity>
           </View>
@@ -225,13 +223,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   roastIcon: { fontSize: 24 },
-  roastText: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.text,
-    lineHeight: 24,
-    fontStyle: 'italic',
-  },
+  roastText: { flex: 1, fontSize: 16, color: Colors.text, lineHeight: 24, fontStyle: 'italic' },
   tipBox: {
     backgroundColor: Colors.darkCard,
     borderRadius: 16,
@@ -244,7 +236,14 @@ const styles = StyleSheet.create({
   },
   tipIcon: { fontSize: 24 },
   tipContent: { flex: 1 },
-  tipTitle: { fontSize: 13, fontWeight: '700', color: Colors.primary, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  tipTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primary,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   tipText: { fontSize: 15, color: Colors.text, lineHeight: 22 },
   actionRow: { flexDirection: 'row', gap: 10 },
   shareBtn: { flex: 1, borderRadius: 14, overflow: 'hidden' },

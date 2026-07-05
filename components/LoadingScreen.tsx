@@ -2,18 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/colors';
-
-const MESSAGES = [
-  'Analyzing the disaster...',
-  'Consulting the fashion police...',
-  'Calculating your style quotient...',
-  'Cross-referencing with Vogue...',
-  'Preparing the hard truth...',
-  'Judging — but make it fashion...',
-  'This might hurt a little...',
-];
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function LoadingScreen() {
+  const { t } = useLanguage();
+  const messages = t.loadingMessages as readonly string[];
   const [msgIndex, setMsgIndex] = useState(0);
   const spinAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -21,12 +14,7 @@ export default function LoadingScreen() {
 
   useEffect(() => {
     Animated.loop(
-      Animated.timing(spinAnim, {
-        toValue: 1,
-        duration: 2000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
+      Animated.timing(spinAnim, { toValue: 1, duration: 2000, easing: Easing.linear, useNativeDriver: true })
     ).start();
 
     Animated.loop(
@@ -38,7 +26,7 @@ export default function LoadingScreen() {
 
     const msgInterval = setInterval(() => {
       Animated.timing(msgFadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
-        setMsgIndex((i) => (i + 1) % MESSAGES.length);
+        setMsgIndex((i) => (i + 1) % messages.length);
         Animated.timing(msgFadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
       });
     }, 2200);
@@ -51,30 +39,16 @@ export default function LoadingScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#0D0D1A', '#1A1A2E', '#0D0D1A']} style={StyleSheet.absoluteFill} />
-
-      <Animated.Text style={[styles.emoji, { transform: [{ scale: pulseAnim }] }]}>
-        🔥
-      </Animated.Text>
-
+      <Animated.Text style={[styles.emoji, { transform: [{ scale: pulseAnim }] }]}>🔥</Animated.Text>
       <Animated.View style={[styles.ring, { transform: [{ rotate: spin }] }]}>
-        <LinearGradient
-          colors={['#FF4757', '#FF6B35', '#FF475700']}
-          style={styles.ringGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        />
+        <LinearGradient colors={['#FF4757', '#FF6B35', '#FF475700']} style={styles.ringGradient} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} />
       </Animated.View>
-
-      <Text style={styles.title}>The AI is judging...</Text>
-
+      <Text style={styles.title}>{t.loadingTitle}</Text>
       <Animated.Text style={[styles.message, { opacity: msgFadeAnim }]}>
-        {MESSAGES[msgIndex]}
+        {messages[msgIndex]}
       </Animated.Text>
-
       <View style={styles.dots}>
-        {[0, 1, 2].map((i) => (
-          <LoadingDot key={i} delay={i * 200} />
-        ))}
+        {[0, 1, 2].map((i) => <LoadingDot key={i} delay={i * 200} />)}
       </View>
     </View>
   );
@@ -95,23 +69,13 @@ function LoadingDot({ delay }: { delay: number }) {
   }, []);
 
   const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
-
-  return (
-    <Animated.View style={[styles.dot, { opacity }]} />
-  );
+  return <Animated.View style={[styles.dot, { opacity }]} />;
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark },
   emoji: { fontSize: 72, marginBottom: 40, zIndex: 1 },
-  ring: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    overflow: 'hidden',
-    opacity: 0.4,
-  },
+  ring: { position: 'absolute', width: 160, height: 160, borderRadius: 80, overflow: 'hidden', opacity: 0.4 },
   ringGradient: { width: '100%', height: '100%' },
   title: { fontSize: 24, fontWeight: '800', color: Colors.text, marginBottom: 16, textAlign: 'center' },
   message: { fontSize: 16, color: Colors.textMuted, textAlign: 'center', paddingHorizontal: 40, marginBottom: 40, lineHeight: 24 },

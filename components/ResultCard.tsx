@@ -23,9 +23,9 @@ export default function ResultCard({ result, gradient }: Props) {
       {/* Background image */}
       <Image source={{ uri: result.imageUri }} style={styles.bgImage} resizeMode="cover" />
 
-      {/* Gradient overlay */}
+      {/* Gradient overlay — kept light so the outfit image shows through */}
       <LinearGradient
-        colors={[gradient[0] + 'CC', gradient[1] + 'EE', '#0D0D1Aee']}
+        colors={[gradient[0] + '22', gradient[1] + '44', '#0D0D1ACC']}
         style={StyleSheet.absoluteFill}
         start={{ x: 0, y: 0 }}
         end={{ x: 0.3, y: 1 }}
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   },
   bgImage: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.6,
+    opacity: 0.9,
   },
   cardContent: {
     flex: 1,
