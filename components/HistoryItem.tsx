@@ -2,6 +2,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, ToneColors } from '@/constants/colors';
 import { RoastResult } from '@/lib/types';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface Props {
   item: RoastResult;
@@ -11,7 +12,8 @@ interface Props {
 const TONE_EMOJI = { brutal: '🔥', ironic: '😏', constructive: '🌱' };
 
 export default function HistoryItem({ item, onPress }: Props) {
-  const date = new Date(item.createdAt).toLocaleDateString('en-US', {
+  const { t } = useLanguage();
+  const date = new Date(item.createdAt).toLocaleDateString(t.dateLocale, {
     month: 'short',
     day: 'numeric',
   });

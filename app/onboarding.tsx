@@ -17,34 +17,12 @@ import * as Haptics from 'expo-haptics';
 import { saveOnboarding } from '@/lib/storage';
 import { RoastTone } from '@/lib/types';
 import { Colors } from '@/constants/colors';
+import { useLanguage } from '@/lib/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
-const TONES: { key: RoastTone; label: string; emoji: string; desc: string; color: string }[] = [
-  {
-    key: 'brutal',
-    label: 'Brutal',
-    emoji: '🔥',
-    desc: 'No mercy. The full, unfiltered truth.',
-    color: Colors.brutal,
-  },
-  {
-    key: 'ironic',
-    label: 'Ironic',
-    emoji: '😏',
-    desc: 'Sharp, witty, deliciously sarcastic.',
-    color: Colors.ironic,
-  },
-  {
-    key: 'constructive',
-    label: 'Constructive',
-    emoji: '🌱',
-    desc: 'Honest feedback with a hopeful spin.',
-    color: Colors.constructive,
-  },
-];
-
 export default function Onboarding() {
+  const { language, t, setLanguage } = useLanguage();
   const [step, setStep] = useState(0);
   const [tone, setTone] = useState<RoastTone>('ironic');
   const [username, setUsername] = useState('');
@@ -64,35 +42,122 @@ export default function Onboarding() {
     router.replace('/(main)');
   }
 
+  const tones = [
+    { key: 'brutal' as RoastTone, label: t.toneBrutalLabel, emoji: '🔥', desc: t.toneBrutalDesc, color: Colors.brutal },
+    { key: 'ironic' as RoastTone, label: t.toneIronicLabel, emoji: '😏', desc: t.toneIronicDesc, color: Colors.ironic },
+    { key: 'constructive' as RoastTone, label: t.toneConstructiveLabel, emoji: '🌱', desc: t.toneConstructiveDesc, color: Colors.constructive },
+  ];
+
   return (
     <LinearGradient colors={['#0D0D1A', '#1A1A2E', '#0D0D1A']} style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+      {/* Language toggle */}
+      <TouchableOpacity
+        style={styles.langBtn}
+        onPress={() => { setLanguage(language === 'en' ? 'it' : 'en'); Haptics.selectionAsync(); }}
+        activeOpacity={0.8}
       >
+        <Text style={styles.langFlag}>{language === 'en' ? '🇬🇧' : '🇮🇹'}</Text>
+      </TouchableOpacity>
+
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          {/* Step indicator */}
           <View style={styles.dots}>
             {[0, 1, 2].map((i) => (
-              <View
-                key={i}
-                style={[styles.dot, step === i && styles.dotActive]}
-              />
+              <View key={i} style={[styles.dot, step === i && styles.dotActive]} />
             ))}
           </View>
 
           <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-            {step === 0 && <SplashStep onNext={goToNext} />}
-            {step === 1 && (
-              <ToneStep tone={tone} onSelect={(t) => { setTone(t); Haptics.selectionAsync(); }} onNext={goToNext} />
+            {step === 0 && (
+              <View style={styles.stepContainer}>
+                <Text style={styles.bigEmoji}>👗</Text>
+                <Text style={styles.title}>{t.appName}</Text>
+                <Text style={styles.subtitle}>{t.splashSubtitle}</Text>
+                <Text style={styles.body}>{t.splashBody}</Text>
+                <TouchableOpacity style={styles.primaryBtn} onPress={goToNext} activeOpacity={0.85}>
+                  <LinearGradient colors={['#FF4757', '#FF6B35']} style={styles.btnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                    <Text style={styles.btnText}>{t.letsGo}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             )}
+
+            {step === 1 && (
+              <View style={styles.stepContainer}>
+                <Text style={styles.stepLabel}>{t.step1of2}</Text>
+                <Text style={styles.title}>{t.chooseTone}</Text>
+                <Text style={styles.body}>{t.howBrutal}</Text>
+                <View style={styles.toneGrid}>
+                  {tones.map((toneOpt) => (
+                    <TouchableOpacity
+                      key={toneOpt.key}
+                      onPress={() => { setTone(toneOpt.key); Haptics.selectionAsync(); }}
+                      activeOpacity={0.85}
+                      style={[
+                        styles.toneCard,
+                        tone === toneOpt.key && { borderColor: toneOpt.color, borderWidth: 2 },
+                      ]}
+                    >
+                      {tone === toneOpt.key && (
+                        <LinearGradient
+                          colors={[toneOpt.color + '22', toneOpt.color + '08']}
+                          style={StyleSheet.absoluteFill}
+                          borderRadius={16}
+                        />
+                      )}
+                      <Text style={styles.toneEmoji}>{toneOpt.emoji}</Text>
+                      <Text style={[styles.toneLabel, tone === toneOpt.key && { color: toneOpt.color }]}>
+                        {toneOpt.label}
+                      </Text>
+                      <Text style={styles.toneDesc}>{toneOpt.desc}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity style={styles.primaryBtn} onPress={goToNext} activeOpacity={0.85}>
+                  <LinearGradient colors={['#FF4757', '#FF6B35']} style={styles.btnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                    <Text style={styles.btnText}>{t.continueBtn}</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {step === 2 && (
-              <UsernameStep
-                username={username}
-                onChange={setUsername}
-                tone={tone}
-                onFinish={finish}
-              />
+              <View style={styles.stepContainer}>
+                <Text style={styles.stepLabel}>{t.step2of2}</Text>
+                <Text style={styles.title}>{t.whatsYourName}</Text>
+                <Text style={styles.body}>
+                  {t.nameBody}{'\n'}
+                  <Text style={styles.textMuted}>{t.nameOptional}</Text>
+                </Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t.namePlaceholder}
+                    placeholderTextColor={Colors.textMuted}
+                    value={username}
+                    onChangeText={setUsername}
+                    maxLength={20}
+                    autoCapitalize="words"
+                    returnKeyType="done"
+                    onSubmitEditing={finish}
+                  />
+                </View>
+                <TouchableOpacity style={styles.primaryBtn} onPress={finish} activeOpacity={0.85}>
+                  <LinearGradient
+                    colors={[Colors.ironic, Colors.ironic + 'BB']}
+                    style={styles.btnGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.btnText}>{t.startRoasted} 😏</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+                {username.length === 0 && (
+                  <TouchableOpacity onPress={finish} style={styles.skipBtn}>
+                    <Text style={styles.skipText}>{t.skipForNow}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </Animated.View>
         </ScrollView>
@@ -101,128 +166,21 @@ export default function Onboarding() {
   );
 }
 
-function SplashStep({ onNext }: { onNext: () => void }) {
-  return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.bigEmoji}>👗</Text>
-      <Text style={styles.title}>Outfit Roaster</Text>
-      <Text style={styles.subtitle}>Your AI fashion judge.{'\n'}Brutal. Fun. Shareable.</Text>
-      <Text style={styles.body}>
-        Take a photo of your outfit and let AI tell you the truth — the whole truth, nothing but the
-        truth.
-      </Text>
-      <TouchableOpacity style={styles.primaryBtn} onPress={onNext} activeOpacity={0.85}>
-        <LinearGradient colors={['#FF4757', '#FF6B35']} style={styles.btnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-          <Text style={styles.btnText}>Let's go 🔥</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function ToneStep({
-  tone,
-  onSelect,
-  onNext,
-}: {
-  tone: RoastTone;
-  onSelect: (t: RoastTone) => void;
-  onNext: () => void;
-}) {
-  return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepLabel}>Step 1 of 2</Text>
-      <Text style={styles.title}>Choose your roast tone</Text>
-      <Text style={styles.body}>How brutal should the AI be?</Text>
-      <View style={styles.toneGrid}>
-        {TONES.map((t) => (
-          <TouchableOpacity
-            key={t.key}
-            onPress={() => onSelect(t.key)}
-            activeOpacity={0.85}
-            style={[
-              styles.toneCard,
-              tone === t.key && { borderColor: t.color, borderWidth: 2 },
-            ]}
-          >
-            {tone === t.key && (
-              <LinearGradient
-                colors={[t.color + '22', t.color + '08']}
-                style={StyleSheet.absoluteFill}
-                borderRadius={16}
-              />
-            )}
-            <Text style={styles.toneEmoji}>{t.emoji}</Text>
-            <Text style={[styles.toneLabel, tone === t.key && { color: t.color }]}>{t.label}</Text>
-            <Text style={styles.toneDesc}>{t.desc}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <TouchableOpacity style={styles.primaryBtn} onPress={onNext} activeOpacity={0.85}>
-        <LinearGradient colors={['#FF4757', '#FF6B35']} style={styles.btnGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-          <Text style={styles.btnText}>Continue</Text>
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function UsernameStep({
-  username,
-  onChange,
-  tone,
-  onFinish,
-}: {
-  username: string;
-  onChange: (v: string) => void;
-  tone: RoastTone;
-  onFinish: () => void;
-}) {
-  const toneData = TONES.find((t) => t.key === tone)!;
-  return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepLabel}>Step 2 of 2</Text>
-      <Text style={styles.title}>What's your name?</Text>
-      <Text style={styles.body}>
-        We'll personalize your roasts.{'\n'}
-        <Text style={styles.textMuted}>(Optional — skip if you're shy)</Text>
-      </Text>
-      <View style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          placeholder="Your name or nickname"
-          placeholderTextColor={Colors.textMuted}
-          value={username}
-          onChangeText={onChange}
-          maxLength={20}
-          autoCapitalize="words"
-          returnKeyType="done"
-          onSubmitEditing={onFinish}
-        />
-      </View>
-      <TouchableOpacity style={styles.primaryBtn} onPress={onFinish} activeOpacity={0.85}>
-        <LinearGradient
-          colors={[toneData.color, toneData.color + 'BB']}
-          style={styles.btnGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          <Text style={styles.btnText}>
-            Start getting roasted {toneData.emoji}
-          </Text>
-        </LinearGradient>
-      </TouchableOpacity>
-      {username.length === 0 && (
-        <TouchableOpacity onPress={onFinish} style={styles.skipBtn}>
-          <Text style={styles.skipText}>Skip for now</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  langBtn: {
+    position: 'absolute',
+    top: 56,
+    right: 24,
+    zIndex: 10,
+    backgroundColor: Colors.darkCard,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  langFlag: { fontSize: 20 },
   scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24 },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 32, marginTop: 60 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.border },
@@ -257,12 +215,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     overflow: 'hidden',
   },
-  input: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    fontSize: 17,
-    color: Colors.text,
-  },
+  input: { paddingHorizontal: 20, paddingVertical: 18, fontSize: 17, color: Colors.text },
   primaryBtn: { width: '100%', borderRadius: 16, overflow: 'hidden' },
   btnGradient: { paddingVertical: 18, alignItems: 'center' },
   btnText: { fontSize: 17, fontWeight: '700', color: '#fff' },

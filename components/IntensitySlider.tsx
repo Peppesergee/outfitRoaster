@@ -16,7 +16,10 @@ interface Props {
 const LABELS = ['Gentle', 'Mild', 'Medium', 'Sharp', 'Devastating'];
 
 export default function IntensitySlider({ value, onChange }: Props) {
-  const thumbX = useRef(new Animated.Value(((value - 1) / 9) * TRACK_WIDTH)).current;
+  const initialX = ((value - 1) / 9) * TRACK_WIDTH;
+  const thumbX = useRef(new Animated.Value(initialX)).current;
+  // Track the committed position so each new gesture starts from the right place
+  const positionRef = useRef(initialX);
   const [displayValue, setDisplayValue] = useState(value);
   const lastHapticRef = useRef(value);
 
@@ -27,8 +30,7 @@ export default function IntensitySlider({ value, onChange }: Props) {
       Haptics.selectionAsync();
     },
     onPanResponderMove: (_, gestureState) => {
-      const rawX = ((value - 1) / 9) * TRACK_WIDTH + gestureState.dx;
-      const clampedX = Math.max(0, Math.min(TRACK_WIDTH, rawX));
+      const clampedX = Math.max(0, Math.min(TRACK_WIDTH, positionRef.current + gestureState.dx));
       thumbX.setValue(clampedX);
       const newValue = Math.round((clampedX / TRACK_WIDTH) * 9) + 1;
       setDisplayValue(newValue);
@@ -38,18 +40,22 @@ export default function IntensitySlider({ value, onChange }: Props) {
       }
     },
     onPanResponderRelease: (_, gestureState) => {
-      const rawX = ((value - 1) / 9) * TRACK_WIDTH + gestureState.dx;
-      const clampedX = Math.max(0, Math.min(TRACK_WIDTH, rawX));
+      const clampedX = Math.max(0, Math.min(TRACK_WIDTH, positionRef.current + gestureState.dx));
       const newValue = Math.round((clampedX / TRACK_WIDTH) * 9) + 1;
       const snappedX = ((newValue - 1) / 9) * TRACK_WIDTH;
-      Animated.spring(thumbX, { toValue: snappedX, useNativeDriver: false, tension: 200, friction: 15 }).start();
+      positionRef.current = snappedX;
+      Animated.spring(thumbX, {
+        toValue: snappedX,
+        useNativeDriver: false,
+        tension: 200,
+        friction: 15,
+      }).start();
       onChange(newValue);
       setDisplayValue(newValue);
     },
   });
 
   const labelIndex = Math.min(4, Math.floor(((displayValue - 1) / 9) * 5));
-  const fillWidth = thumbX.interpolate({ inputRange: [0, TRACK_WIDTH], outputRange: [0, TRACK_WIDTH] });
 
   return (
     <View style={styles.container}>
@@ -67,12 +73,7 @@ export default function IntensitySlider({ value, onChange }: Props) {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         />
-        <Animated.View
-          style={[
-            styles.thumb,
-            { transform: [{ translateX: thumbX }] },
-          ]}
-        >
+        <Animated.View style={[styles.thumb, { transform: [{ translateX: thumbX }] }]}>
           <Text style={styles.thumbValue}>{displayValue}</Text>
         </Animated.View>
       </View>
@@ -102,7 +103,6 @@ const styles = StyleSheet.create({
   track: {
     height: THUMB_SIZE,
     justifyContent: 'center',
-    paddingHorizontal: 0,
   },
   trackGradient: {
     height: 6,

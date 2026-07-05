@@ -24,16 +24,23 @@ function intensityDescription(intensity: number): string {
   return 'Maximum intensity — absolutely no mercy.';
 }
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  en: 'Respond entirely in English.',
+  it: 'Rispondi interamente in italiano. Usa un tono naturale e colloquiale italiano.',
+};
+
 export async function analyzeOutfit(
   base64Image: string,
   tone: string,
-  intensity: number
+  intensity: number,
+  language = 'en'
 ): Promise<RoastData> {
   const prompt = `You are a sharp, pop-culturally updated fashion critic called "The Outfit Roaster".
 Analyze the outfit in this photo and respond ONLY with a valid JSON object.
 
 Tone style: ${TONE_INSTRUCTIONS[tone] ?? TONE_INSTRUCTIONS.ironic}
 Intensity: ${intensityDescription(intensity)} (${intensity}/10)
+Language: ${LANGUAGE_INSTRUCTIONS[language] ?? LANGUAGE_INSTRUCTIONS.en}
 
 HARD RULES — violating any of these disqualifies your response:
 - NEVER comment on the person's body, face, weight, or physical appearance

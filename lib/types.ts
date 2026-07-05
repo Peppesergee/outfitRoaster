@@ -1,4 +1,5 @@
 export type RoastTone = 'brutal' | 'ironic' | 'constructive';
+export type RoastLanguage = 'en' | 'it';
 
 export interface RoastResult {
   id: string;
@@ -11,6 +12,7 @@ export interface RoastResult {
   imageUri: string;
   tone: RoastTone;
   intensity: number;
+  language: RoastLanguage;
   createdAt: string;
 }
 
