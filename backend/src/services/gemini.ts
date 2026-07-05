@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export interface RoastData {
   roast: string;
@@ -29,8 +29,6 @@ export async function analyzeOutfit(
   tone: string,
   intensity: number
 ): Promise<RoastData> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
   const prompt = `You are a sharp, pop-culturally updated fashion critic called "The Outfit Roaster".
 Analyze the outfit in this photo and respond ONLY with a valid JSON object.
 
@@ -55,23 +53,33 @@ Respond with ONLY this JSON (no markdown, no backticks):
   "emoji": "single emoji that captures the vibe"
 }`;
 
-  const imagePart: Part = {
-    inlineData: {
-      data: base64Image,
-      mimeType: 'image/jpeg',
-    },
-  };
+  const completion = await groq.chat.completions.create({
+    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/jpeg;base64,${base64Image}` },
+          },
+        ],
+      },
+    ],
+    temperature: 0.9,
+    max_tokens: 1024,
+    response_format: { type: 'json_object' },
+  });
 
-  const result = await model.generateContent([prompt, imagePart]);
-  const text = result.response.text().trim();
-
+  const text = completion.choices[0]?.message?.content?.trim() ?? '';
   const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
 
   let parsed: RoastData;
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new Error(`Gemini returned invalid JSON: ${text.slice(0, 200)}`);
+    throw new Error(`Model returned invalid JSON: ${text.slice(0, 200)}`);
   }
 
   parsed.score = Math.max(1, Math.min(10, Math.round(parsed.score)));

@@ -59,7 +59,7 @@ export async function roastRoutes(fastify: FastifyInstance) {
       });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return reply.status(503).send({ success: false, error: 'Service not configured.' });
     }
 
