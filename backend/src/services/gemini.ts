@@ -29,7 +29,7 @@ export async function analyzeOutfit(
   tone: string,
   intensity: number
 ): Promise<RoastData> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `You are a sharp, pop-culturally updated fashion critic called "The Outfit Roaster".
 Analyze the outfit in this photo and respond ONLY with a valid JSON object.
