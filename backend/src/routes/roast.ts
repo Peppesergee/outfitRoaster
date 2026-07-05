@@ -69,10 +69,12 @@ export async function roastRoutes(fastify: FastifyInstance) {
       return reply.send({ success: true, data });
     } catch (err: any) {
       fastify.log.error(err);
-      return reply.status(500).send({
-        success: false,
-        error: 'Could not generate roast. Try again!',
-      });
+      const status = err?.status === 429 ? 429 : 500;
+      const message =
+        err?.status === 429
+          ? 'Gemini API quota exceeded. Try a new API key or wait for quota reset.'
+          : 'Could not generate roast. Try again!';
+      return reply.status(status).send({ success: false, error: message });
     }
   });
 
