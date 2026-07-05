@@ -59,8 +59,7 @@
           "savePhotosPermission": "Allow OutfitRoaster to save roast cards to your photos.",
           "isAccessMediaLocationEnabled": true
         }
-      ],
-      "expo-sharing"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
