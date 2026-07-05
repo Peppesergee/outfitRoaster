@@ -59,14 +59,15 @@
           "savePhotosPermission": "Allow OutfitRoaster to save roast cards to your photos.",
           "isAccessMediaLocationEnabled": true
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "scheme": "outfit-roaster",
     "extra": {
-      "apiUrl": "http://localhost:3000"
+      "apiUrl": "http://192.168.1.11:3000"
     }
   }
 }
