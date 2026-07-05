@@ -25,7 +25,7 @@ import {
   getStreak,
 } from '@/lib/storage';
 import { Colors, ToneColors } from '@/constants/colors';
-import { RoastTone, RoastResult } from '@/lib/types';
+import { RoastLanguage, RoastTone, RoastResult } from '@/lib/types';
 import IntensitySlider from '@/components/IntensitySlider';
 import LoadingScreen from '@/components/LoadingScreen';
 
@@ -39,6 +39,7 @@ export default function HomeScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [tone, setTone] = useState<RoastTone>('ironic');
   const [intensity, setIntensity] = useState(5);
+  const [language, setLanguage] = useState<RoastLanguage>('en');
   const [dailyCount, setDailyCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [username, setUsername] = useState('');
@@ -117,6 +118,7 @@ export default function HomeScreen() {
         image: base64,
         tone,
         intensity,
+        language,
         deviceId: 'device-placeholder',
       });
 
@@ -130,6 +132,7 @@ export default function HomeScreen() {
         imageUri,
         tone,
         intensity,
+        language,
         createdAt: new Date().toISOString(),
       };
 
@@ -263,6 +266,27 @@ export default function HomeScreen() {
               })}
             </View>
 
+            {/* Language toggle */}
+            <Text style={styles.sectionLabel}>Language</Text>
+            <View style={styles.langRow}>
+              {(['en', 'it'] as RoastLanguage[]).map((lang) => {
+                const labels = { en: '🇬🇧 English', it: '🇮🇹 Italiano' };
+                const isActive = language === lang;
+                return (
+                  <TouchableOpacity
+                    key={lang}
+                    style={[styles.toneChip, isActive && styles.langChipActive]}
+                    onPress={() => { setLanguage(lang); Haptics.selectionAsync(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.toneChipText, isActive && styles.langChipTextActive]}>
+                      {labels[lang]}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
             {/* Intensity slider */}
             <Text style={styles.sectionLabel}>Intensity</Text>
             <IntensitySlider value={intensity} onChange={setIntensity} />
@@ -383,6 +407,9 @@ const styles = StyleSheet.create({
   },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: Colors.textMuted, marginBottom: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
   toneRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
+  langRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  langChipActive: { backgroundColor: Colors.primary + '22', borderColor: Colors.primary },
+  langChipTextActive: { color: Colors.primary },
   toneChip: {
     flex: 1,
     paddingVertical: 10,

@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { RoastApiResponse, RoastTone } from './types';
+import { RoastApiResponse, RoastLanguage, RoastTone } from './types';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl ?? 'http://localhost:3000';
 
@@ -7,6 +7,7 @@ interface RoastRequest {
   image: string;
   tone: RoastTone;
   intensity: number;
+  language: RoastLanguage;
   deviceId: string;
 }
 

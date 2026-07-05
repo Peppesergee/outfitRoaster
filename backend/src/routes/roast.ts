@@ -32,6 +32,7 @@ interface RoastBody {
   image: string;
   tone?: string;
   intensity?: number;
+  language?: string;
   deviceId?: string;
 }
 
@@ -45,12 +46,13 @@ export async function roastRoutes(fastify: FastifyInstance) {
           image: { type: 'string', minLength: 100 },
           tone: { type: 'string', enum: ['brutal', 'ironic', 'constructive'], default: 'ironic' },
           intensity: { type: 'number', minimum: 1, maximum: 10, default: 5 },
+          language: { type: 'string', enum: ['en', 'it'], default: 'en' },
           deviceId: { type: 'string', default: 'anonymous' },
         },
       },
     },
   }, async (request, reply) => {
-    const { image, tone = 'ironic', intensity = 5, deviceId = 'anonymous' } = request.body;
+    const { image, tone = 'ironic', intensity = 5, language = 'en', deviceId = 'anonymous' } = request.body;
 
     if (!checkRateLimit(deviceId)) {
       return reply.status(429).send({
@@ -64,7 +66,7 @@ export async function roastRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      const data = await analyzeOutfit(image, tone, intensity);
+      const data = await analyzeOutfit(image, tone, intensity, language);
       incrementUsage(deviceId);
       return reply.send({ success: true, data });
     } catch (err: any) {
