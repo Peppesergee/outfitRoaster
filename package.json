@@ -26,15 +26,12 @@
     "expo-sharing": "*",
     "expo-splash-screen": "*",
     "expo-status-bar": "*",
-    "nativewind": "^4.1.23",
     "react": "19.1.0",
     "react-native": "0.81.4",
     "react-native-gesture-handler": "*",
-    "react-native-reanimated": "*",
     "react-native-safe-area-context": "*",
     "react-native-screens": "*",
-    "react-native-view-shot": "~4.0.3",
-    "tailwindcss": "^3.4.0"
+    "react-native-view-shot": "~4.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
